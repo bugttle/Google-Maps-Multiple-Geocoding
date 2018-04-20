@@ -43,17 +43,30 @@
 <div id="map"></div>
 
 <script>
+  var textarea = document.getElementById('addresses');
   var map, geocoder, bounds;
   var processing_addresses = [];
 
+  function isPhoneNumber(text) {
+    // only numeric, -, +, spaces
+    return text.match(/^[\d-\+\s]+$/) != null;
+  }
+
+  function isZipCode(text) {
+    // ex.) 〒111-1111
+    return text.match(/^〒\d+[-]\d+$/) != null;
+  }
+
   function getNormalizedAddresses() {
     var addresses_count = {};
-    var textarea = document.getElementById('addresses');
     // normalize
-    var lines = textarea.value.trim().split(/\r*\n/).map(function (element) {
-      return element.trim();
+    var lines = textarea.value.split(/\r*\n/).map(function (value) {
+      return value.trim();
+    }).filter(function (value) {
+      return value != "" && !isPhoneNumber(value) && !isZipCode(value);
     });
-    if (lines == "") {
+
+    if (lines == "" || lines.length == 0) {
       return [];  // empty text
     }
 
@@ -72,9 +85,16 @@
         lines.splice(i, 1);
       }
     }
-    // replace
-    textarea.value = lines.join("\n");
     return lines;
+  }
+
+  function removeZeroResultsAddress(address) {
+    var addresses = getNormalizedAddresses();
+    var index = addresses.indexOf(address);
+    if (index != -1) {
+      addresses.splice(index, 1);
+      textarea.value = addresses.join('\n');
+    }
   }
 
   function initMap() {
@@ -89,6 +109,8 @@
 
     document.getElementById('submit').addEventListener('click', function () {
       processing_addresses = getNormalizedAddresses();
+      // replace
+      textarea.value = processing_addresses.join("\n");
       if (0 < processing_addresses.length) {
         geocodeAddresses();
       }
@@ -153,6 +175,7 @@
       } else {
         if (status == 'ZERO_RESULTS') {
           console.log('Geocode was not successful for the following reason: ' + status);
+          removeZeroResultsAddress(address);
         } else if (status == 'OVER_QUERY_LIMIT' || status == 'REQUEST_DENIED' || status == 'INVALID_REQUEST') {
           alert('Geocode was not successful for the following reason: ' + status);
         } else if (status == 'UNKNOWN_ERROR') {
