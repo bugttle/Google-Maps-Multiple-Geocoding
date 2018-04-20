@@ -53,6 +53,10 @@
     var lines = textarea.value.trim().split(/\r*\n/).map(function (element) {
       return element.trim();
     });
+    if (lines == "") {
+      return [];  // empty text
+    }
+
     // count
     lines.forEach(function (line) {
       if (!addresses_count.hasOwnProperty(line)) {
@@ -86,7 +90,9 @@
 
     document.getElementById('submit').addEventListener('click', function () {
       processing_addresses = getNormalizedAddresses();
-      geocodeAddresses();
+      if (0 < processing_addresses.length) {
+        geocodeAddresses();
+      }
     });
   }
 
@@ -119,6 +125,7 @@
     geocodeAddress(address);
 
     if (0 < processing_addresses.length) {
+      // repeat
       setTimeout(geocodeAddresses, 500);
     }
   }
