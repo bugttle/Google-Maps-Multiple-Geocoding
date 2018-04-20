@@ -46,27 +46,46 @@
   var map, geocoder, bounds, infoWindow;
   var processing_addresses = [];
 
-  function getAddresses() {
-    var text = document.getElementById('addresses').value;
-    return text.trim().split(/\r*\n/)
-      .map(function (element) {
-        return element.trim();
-      });
+  function getNormalizedAddresses() {
+    var addresses_count = {};
+    var textarea = document.getElementById('addresses');
+    // normalize
+    var lines = textarea.value.trim().split(/\r*\n/).map(function (element) {
+      return element.trim();
+    });
+    // count
+    lines.forEach(function (line) {
+      if (!addresses_count.hasOwnProperty(line)) {
+        addresses_count[line] = 1;
+      } else {
+        addresses_count[line]++;
+      }
+    });
+    // remove
+    for (var i = lines.length - 1; 0 <= i; --i) {
+      var line = lines[i];
+      if (1 < addresses_count[line]) {
+        lines.splice(i, 1);
+      }
+    }
+    // replace
+    textarea.value = lines.join("\n");
+    return lines;
   }
 
   function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
-      center: {lat: 35.668864, lng: 139.4611935},
+      center: { lat: 35.668864, lng: 139.4611935 },
       zoom: 10
     });
     geocoder = new google.maps.Geocoder;
     bounds = new google.maps.LatLngBounds;
-    infoWindow = new google.maps.InfoWindow({map: map});
+    infoWindow = new google.maps.InfoWindow({ map: map });
 
     setGeoLocation();
 
     document.getElementById('submit').addEventListener('click', function () {
-      processing_addresses = getAddresses();
+      processing_addresses = getNormalizedAddresses();
       geocodeAddresses();
     });
   }
