@@ -151,7 +151,14 @@
           infowindow.open(map, marker);
         })
       } else {
-        alert('Geocode was not successful for the following reason: ' + status);
+        if (status == 'ZERO_RESULTS') {
+          console.log('Geocode was not successful for the following reason: ' + status);
+        } else if (status == 'OVER_QUERY_LIMIT' || status == 'REQUEST_DENIED' || status == 'INVALID_REQUEST') {
+          alert('Geocode was not successful for the following reason: ' + status);
+        } else if (status == 'UNKNOWN_ERROR') {
+          console.log('Geocode was not successful for the following reason: ' + status);
+          processing_addresses.push(address);  // retry
+        }
       }
     });
   }
