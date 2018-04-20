@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Maps Geos</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8"/>
+  <style>
+    html, body {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+    }
+
+    #header {
+      margin: 0px 0px 10px 0px;
+      text-align: center;
+      height: 20%;
+      width: 100%;
+    }
+
+    #addresses {
+      height: 100%;
+      width: 100%;
+    }
+
+    #submit {
+      position: relative;
+      top: 0%;
+      z-index: 5;
+    }
+
+    #map {
+      height: 80%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+<div id="header">
+  <textarea id="addresses"></textarea>
+  <input id="submit" type="button" value="Geocode">
+</div>
+<div id="map"></div>
+
+<script>
+  var map, geocoder, bounds, infoWindow;
+  var processing_addresses = [];
+
+  function getAddresses() {
+    var text = document.getElementById('addresses').value;
+    return text.trim().split(/\r*\n/)
+      .map(function (element) {
+        return element.trim();
+      });
+  }
+
+  function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: {lat: 35.668864, lng: 139.4611935},
+      zoom: 10
+    });
+    geocoder = new google.maps.Geocoder;
+    bounds = new google.maps.LatLngBounds;
+    infoWindow = new google.maps.InfoWindow({map: map});
+
+    setGeoLocation();
+
+    document.getElementById('submit').addEventListener('click', function () {
+      processing_addresses = getAddresses();
+      geocodeAddresses();
+    });
+  }
+
+  function setGeoLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function (position) {
+        var location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        infoWindow.setPosition(location);
+        infoWindow.setContent('You\'re are here');
+
+        map.setCenter(location);
+        map.setZoom(10);
+
+        bounds.extend(location);
+      }, function () {
+        alert('Error: The Geolocation service failed.');
+      });
+    } else {
+      // Browser doesn't support Geolocation
+      alert('Error: Your browser doesn\'t support geolocation');
+    }
+  }
+
+  function geocodeAddresses() {
+    var address = processing_addresses.shift();
+    geocodeAddress(address);
+
+    if (0 < processing_addresses.length) {
+      setTimeout(geocodeAddresses, 500);
+    }
+  }
+
+  function geocodeAddress(address) {
+    geocoder.geocode({ 'address': address }, function (results, status) {
+      if (status == 'OK') {
+        var location = results[0].geometry.location;
+        var marker = new google.maps.Marker({
+          map: map,
+          position: location,
+          title: address
+        });
+        bounds.extend(location);
+        map.fitBounds(bounds);
+      } else {
+        alert('Geocode was not successful for the following reason: ' + status);
+        processing_addresses.push(address);  // retry
+      }
+    });
+  }
+</script>
+<script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBzFvL6mYRYRn6SmEQYs_N2lkae9g4fh-c&callback=initMap">
+</script>
+</body>
+</html>
